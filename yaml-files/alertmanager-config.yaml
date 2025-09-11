@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: default
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'aniket9766228627@gmail.com'
+      smtp_auth_username: 'aniket9766228627@gmail.com'
+      smtp_auth_password: 'wduclwliosdfjaen'  # Confirm this is the correct app-specific password
+      smtp_require_tls: true
+    route:
+      receiver: 'email-notifications'
+      group_by: ['alertname', 'app', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+    - name: 'email-notifications'
+      email_configs:
+      - to: 'aniket9766228627@gmail.com'  # Replace with your desired recipient email
+        send_resolved: true
+        headers:
+          subject: "{{ .CommonAnnotations.summary }}"
+        html: "<b>{{ .CommonAnnotations.summary }}</b><br>{{ .CommonAnnotations.description }}"

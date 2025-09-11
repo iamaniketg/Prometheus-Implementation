@@ -17,22 +17,37 @@ spec:
           image: prom/prometheus:v2.53.0
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--web.enable-lifecycle"  # Allows reloading config without restart
           ports:
             - containerPort: 9090
           volumeMounts:
             - name: prometheus-config-volume
-              mountPath: /etc/prometheus
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+            - name: prometheus-alert-rules-volume
+              mountPath: /etc/prometheus/alert-rules.yml
+              subPath: alert-rules.yml
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"  # Add resource limits to avoid constraints
       volumes:
         - name: prometheus-config-volume
           configMap:
             name: prometheus-config
+        - name: prometheus-alert-rules-volume
+          configMap:
+            name: prometheus-alert-rules
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
 spec:
-  type: ClusterIP   # or LoadBalancer if you want external access
+  type: ClusterIP
   selector:
     app: prometheus
   ports:

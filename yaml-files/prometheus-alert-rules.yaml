@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: default
+data:
+  alert-rules.yml: |
+    groups:
+    - name: springboot-app-alerts
+      rules:
+      - alert: SpringBootAppHighErrorRate
+        expr: rate(http_server_requests_seconds_count{job="springboot-app", status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          app: springboot-app
+        annotations:
+          summary: "High error rate in springboot-app"
+          description: "The 5xx error rate for springboot-app ({{ $labels.instance }}) is above 0.1 req/s for 5 minutes."
+      - alert: SpringBootAppHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{job="springboot-app"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          app: springboot-app
+        annotations:
+          summary: "High latency in springboot-app"
+          description: "The 95th percentile latency for springboot-app ({{ $labels.instance }}) is above 1 second for 5 minutes."
+    - name: employee-app-alerts
+      rules:
+      - alert: EmployeeAppHighErrorRate
+        expr: rate(http_server_requests_seconds_count{job="employee-app", status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          app: employee-app
+        annotations:
+          summary: "High error rate in employee-app"
+          description: "The 5xx error rate for employee-app ({{ $labels.instance }}) is above 0.1 req/s for 5 minutes."
+      - alert: EmployeeAppHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{job="employee-app"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          app: employee-app
+        annotations:
+          summary: "High latency in employee-app"
+          description: "The 95th percentile latency for employee-app ({{ $labels.instance }}) is above 1 second for 5 minutes."
+    - name: test-alerts
+      rules:
+      - alert: AlwaysFiring
+        expr: vector(1)
+        for: 30s
+        labels:
+          severity: test
+        annotations:
+          summary: "Test alert"
+          description: "This is a test alert that always fires every 30s."
+    - name: springboot-test-alerts
+      rules:
+      # 🔹 1. App Down (container not exposing metrics)
+      - alert: SpringBootAppDown
+        expr: up{job="springboot-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spring Boot app is down"
+          description: "Prometheus target springboot-app is not reachable."
